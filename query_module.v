@@ -28,14 +28,13 @@ module query_module(
     input [255:0] pcie_data_rec_fifo_out,
 	// comunication with chack_cache
     input read_page_cmd_fifo_out_en,
-    output reg read_page_cmd_fifo_empty,
-    output reg [127:0] read_page_cmd_fifo_out,
+    output  read_page_cmd_fifo_empty,
+    output  [127:0] read_page_cmd_fifo_out,
 	//comunication with check_command_fifo
     input [31:0] read_page_addr,
     output page_hit,
     input data_valid,
     input [255:0] data_in,
-    output data_fifo_full,
     output  query_cmd_finish_fifo_empty,
     output  [127:0] query_cmd_finish_fifo_out,
     input query_cmd_finish_fifo_out_en,
@@ -88,21 +87,7 @@ module query_module(
 	reg read_page_cmd_en;
 
 	reg [31:0] target_page_addr;
-    wire [31:0] data_out;
-    wire data_out_en;
-    wire data_fifo_empty;
-// read back data
-fifo_256in_32out  read_back_data(
-  .rst(rst), // input rst
-  .wr_clk(clk), // input wr_clk
-  .rd_clk(clk), // input rd_clk
-  .din(data_in), // input [255 : 0] din
-  .wr_en(data_valid), // input wr_en
-  .rd_en(data_out_en), // input rd_en
-  .dout(data_out), // output [31 : 0] dout
-  .full(data_fifo_full), // output full
-  .empty(data_fifo_empty) // output empty
-);
+
 
 // sequential state logic (1st always) 
 always @ (posedge clk or negedge rst)
@@ -372,10 +357,10 @@ begin
 				predicate_col[6]   <= pcie_data_rec_fifo_out[47:40];
 				predicate_value[6] <= pcie_data_rec_fifo_out[1*48+31:1*48];
 				predicate_op[7]    <= pcie_data_rec_fifo_out[1*48+39:1*48+32];
-				predicate_col[7]   <= pcie_data_rec_fifo_out[1*40+47:1*48+40];
+				predicate_col[7]   <= pcie_data_rec_fifo_out[1*48+47:1*48+40];
 				predicate_value[7] <= pcie_data_rec_fifo_out[2*48+31:2*48];
 				predicate_num      <= pcie_data_rec_fifo_out[2*48+39:2*48+32];			
-            end
+         end
 			READPARATAIL:
 			begin
 					pcie_data_rec_fifo_out_en <= 1'b1;
@@ -404,7 +389,7 @@ begin
 end
 
 // Instantiate data_parser module
-reg [31:0] dout [0:7];
+wire [31:0] dout [0:7];
 data_parser data_parser_inst(
     .clk(clk),
     .rst(rst),
@@ -416,9 +401,8 @@ data_parser data_parser_inst(
 	.record_num(record_num),
     .read_page_addr(read_page_addr), 
     .page_hit(page_hit), 
-    .data_out_en(data_out_en), 
-    .data_out(data_out), 
-    .data_fifo_empty(data_fifo_empty),
+    .data_valid(data_valid), 
+    .data_in(data_in), 
 	.rd_en(column_data_fifo_out_en),
 	.one_empty(column_data_fifo_empty),
 	.dout0(dout[0]),
@@ -435,7 +419,7 @@ data_parser data_parser_inst(
 // read page cmd fifo interface with check cache module
 GeneratedReadCMD read_page_cmd_fifo (
   .clk(clk), // input clk
-  .rst(rst), // input rst
+  .rst(!rst), // input rst
   .din((query_para_config_done == 1'b1 )? read_page_cmd_others : read_page_cmd), // input [127 : 0] din TODO
   .wr_en((query_para_config_done == 1'b1)? read_page_cmd_en_others : read_page_cmd_en), // input wr_en
   .rd_en(read_page_cmd_fifo_out_en), // input rd_en
@@ -569,7 +553,7 @@ RAM256Bits truth_table (
 // Instantiate the data_projector module
 data_projector data_projector_inst (
 	.clk(clk),
-	.rst(rst),
+	.rst(!rst),
 	.record_num(record_num),
     .column_flag(column_flag),
     .column_data_fifo_empty(column_data_fifo_empty), 

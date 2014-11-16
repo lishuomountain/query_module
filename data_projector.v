@@ -458,7 +458,7 @@ begin
 end
 
 FilteredData query_data_fifo (
-  .rst(rst), // input rst
+  .rst(!rst), // input rst
   .wr_clk(clk), // input wr_clk
   .rd_clk(clk), // input rd_clk
   .din(query_din), // input [31 : 0] din
@@ -471,7 +471,7 @@ FilteredData query_data_fifo (
 
 GeneratedReadCMD query_cmd_finish_fifo (
   .clk(clk), // input clk
-  .rst(rst), // input rst
+  .rst(!rst), // input rst
   .din(query_finish_cmd), // input [127 : 0] din TODO
   .wr_en(query_finish_cmd_en), // input wr_en
   .rd_en(query_cmd_finish_fifo_out_en), // input rd_en
